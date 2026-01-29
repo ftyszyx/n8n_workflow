@@ -18,7 +18,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/clean-dist.js && tsc -p tsconfig.json --incremental false && node scripts/copy-icons.js",
     "dev": "tsc -p tsconfig.json -w",
     "prepare": "npm run build"
   },
@@ -37,8 +37,8 @@
     "n8nNodesApiVersion": 1,
     "nodes": [
       "dist/nodes/DouyinParse/DouyinParse.node.js",
-      "dist/nodes/DashScopeAsr/DashScopeAsr.node.js",
-      "dist/nodes/FfmpegExtractAudio/FfmpegExtractAudio.node.js"
+      "dist/nodes/FfmpegExtractAudio/FfmpegExtractAudio.node.js",
+      "dist/nodes/Whisper/Whisper.node.js"
     ],
     "credentials": [
       "dist/credentials/DashScopeApi.credentials.js"

@@ -16,19 +16,15 @@
     "url": "https://github.com/toema/n8n-playwright"
   },
   "engines": {
-    "node": ">=18.10",
-    "pnpm": ">=9.1"
+    "node": ">=18.10"
   },
   "packageManager": "pnpm@9.1.4",
   "main": "dist/nodes/index.js",
   "scripts": {
     "rebuild": "node dist/nodes/scripts/setup-browsers.js",
     "setup": "npm config set yes true && node dist/nodes/scripts/setup-browsers.js ",
-    "build": "tsc && gulp build:icons",
-    "dev": "tsc --watch",
-    "format": "prettier nodes package.json --write",
-    "lint": "eslint nodes package.json",
-    "lintfix": "eslint nodes package.json --fix"
+    "build": "  tsc -p tsconfig.json --incremental false && node scripts/copy-icons.js",
+    "dev": "tsc --watch"
   },
   "files": [
     "dist",
@@ -46,15 +42,16 @@
     "@typescript-eslint/parser": "^7.15.0",
     "eslint": "^8.56.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.1",
-    "gulp": "^4.0.2",
-    "n8n-workflow": "*",
     "playwright": "^1.49.0",
+    "n8n-core": ">=1.0.0",
+    "n8n-workflow": ">=1.0.0",
     "prettier": "^3.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
   },
   "peerDependencies": {
-    "n8n-workflow": "*"
+    "n8n-core": ">=1.0.0",
+    "n8n-workflow": ">=1.0.0"
   },
   "dependencies": {
     "@n8n/vm2": "^3.9.25",

@@ -7,7 +7,7 @@
         "operation": "media:uploadOther",
         "inputDataFieldName": "=data"
       },
-      "type": "n8n-nodes-wechat-offiaccount.wechatOfficialAccountNode",
+      "type": "n8n-nodes-wechat.wechatOfficialAccountNode",
       "typeVersion": 1,
       "position": [
         336,
@@ -55,7 +55,7 @@
         "operation": "draft:add",
         "articles": "=[{\n   \"article_type\":\"news\",\n   \"title\": \"每日一诗\",\n   \"content\": {{ JSON.stringify($('AI Agent').item.json.output)}},\n   \"thumb_media_id\": \"{{ $json.media_id }}\"\n}] "
       },
-      "type": "n8n-nodes-wechat-offiaccount.wechatOfficialAccountNode",
+      "type": "n8n-nodes-wechat.wechatOfficialAccountNode",
       "typeVersion": 1,
       "position": [
         560,
