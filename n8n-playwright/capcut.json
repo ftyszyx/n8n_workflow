@@ -1,0 +1,201 @@
+{
+  "name": "capcut",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "urls",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "urls",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -880,
+        96
+      ],
+      "id": "dc3e6783-defc-4d4a-a079-766eb06d21b6",
+      "name": "On form submission",
+      "webhookId": "342f115b-2076-4b71-b1f2-f420a8d66375"
+    },
+    {
+      "parameters": {
+        "shareText": "https://www.douyin.com/user/self?from_tab_name=main&modal_id=7588715160664980913&showTab=favorite_collection"
+      },
+      "type": "n8n-nodes-douyin-dashscope.douyinParse",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        96
+      ],
+      "id": "7fe54945-8f4d-4d4b-b915-3acd996fd50e",
+      "name": "Douyin Parse"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        80
+      ],
+      "id": "1494a5f1-87c7-46b3-a2bc-25bbbcc93b4f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "captureNetwork",
+        "url": "https://v.douyin.com/ZtNn--M8J4M",
+        "urlFilter": "/aweme/v1/web/aweme/detail/.*7599985729380322570",
+        "resourceTypes": [
+          "application/json"
+        ],
+        "browser": "firefox",
+        "browserOptions": {
+          "headless": true
+        }
+      },
+      "type": "n8n-nodes-playwright.playwright",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -128
+      ],
+      "id": "0e26d397-8052-49a5-9506-35cc64f8e0a5",
+      "name": "Playwright"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst urls=[]\nfor (const item of $input.all()) {\n  \n  const downurls=item.json.records[0].body.aweme_detail.video.download_addr.url_list; \n   for(const urlitem of downurls){\n     urls.push(urlitem);\n   }\n}\n\n\n\nreturn {urls:urls};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        -128
+      ],
+      "id": "b83c0303-c022-4d61-8e51-e2f4e8979a48",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "urls",
+        "options": {
+          "destinationFieldName": "url"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        64,
+        -240
+      ],
+      "id": "d156b5e1-294e-4530-a70e-65e4fa7fdb85",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        32,
+        -96
+      ],
+      "id": "b2fd0a05-ed57-4792-b491-89f3a02dbcfd",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "name": "Replace Me",
+      "typeVersion": 1,
+      "position": [
+        304,
+        96
+      ],
+      "id": "5d397a7f-15a5-42a2-8b2a-4c2f7f57c867"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Douyin Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Playwright": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Replace Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Replace Me": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "d5c3eff4-ae48-44aa-a256-67c3184dfed9",
+  "meta": {
+    "instanceId": "10632c0121cbee6ec79e0c57073a02f9d1ea757f302d57f377c92926266100d5"
+  },
+  "id": "Q1-utPOWSF74OtQJHaYiB",
+  "tags": []
+}

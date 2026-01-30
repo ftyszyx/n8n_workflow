@@ -1,0 +1,1 @@
+module.exports = { printWidth: 240, singleQuote: true, semi: true, trailingComma: 'all' };

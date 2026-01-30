@@ -11,8 +11,8 @@ import * as path from 'path';
 
 type ChildOutput = string | Buffer;
 
-function runCommand(command: string, args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }>
-{
+function runCommand(command: string, args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+	console.log('runCommand', command, 'args', args.join(' '));
 	return new Promise((resolve, reject) => {
 		const child = spawn(command, args, { windowsHide: true });
 		let stdout = '';
@@ -53,13 +53,6 @@ export class FfmpegExtractAudio implements INodeType {
 				default: '',
 				required: true,
 				description: 'Local file path to the video (e.g. D:\\tmp\\video.mp4)',
-			},
-			{
-				displayName: 'Output Audio Path',
-				name: 'outputPath',
-				type: 'string',
-				default: '',
-				description: 'Local file path to write audio. Leave empty to write <input>.mp3',
 			},
 			{
 				displayName: 'Format',
@@ -105,21 +98,15 @@ export class FfmpegExtractAudio implements INodeType {
 
 		for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
 			const inputPath = this.getNodeParameter('inputPath', itemIndex) as string;
-			const outputPathParam = this.getNodeParameter('outputPath', itemIndex) as string;
 			const format = this.getNodeParameter('format', itemIndex) as string;
 			const overwrite = this.getNodeParameter('overwrite', itemIndex) as boolean;
 			const ffmpegPath = this.getNodeParameter('ffmpegPath', itemIndex) as string;
 
-			let outputPath = outputPathParam;
-			if (!outputPath) {
-				outputPath = defaultOutputPath(inputPath, format === 'mp3' ? '.mp3' : '.audio');
-			}
-
+			const outputPath = defaultOutputPath(inputPath, format === 'mp3' ? '.mp3' : '.audio');
 			const args: string[] = [];
 			args.push(overwrite ? '-y' : '-n');
 			args.push('-i', inputPath);
 			args.push('-vn');
-
 			if (format === 'mp3') {
 				const mp3Quality = this.getNodeParameter('mp3Quality', itemIndex) as number;
 				args.push('-acodec', 'libmp3lame');

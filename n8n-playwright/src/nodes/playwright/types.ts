@@ -2,6 +2,9 @@
 export interface IBrowserOptions {
     headless?: boolean;
     slowMo?: number;
+    showDebug?: boolean;
+    defaultTimeoutMs?: number;
+    navigationTimeoutMs?: number;
 }
 
 
