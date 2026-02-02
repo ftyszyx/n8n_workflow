@@ -85,7 +85,7 @@
       "typeVersion": 2,
       "position": [
         -176,
-        64
+        56
       ],
       "id": "6133f723-13ef-493c-8a9f-865e67e15cd8",
       "name": "Has Binary?"
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        -416,
-        0
+        -400,
+        -16
       ],
       "id": "530923f0-a3c6-4094-b2f3-092e008a50b6",
       "name": "HTTP Request1",
@@ -155,7 +155,7 @@
     },
     {
       "parameters": {
-        "shareText": "https://v.douyin.com/ZtNn--M8J4M"
+        "shareText": "8.25 复制打开抖音，看看【AI硬件情报局的作品】这台国产小机器人众筹卷走两百多万，老外都抢着付钱 ... https://v.douyin.com/ZtNn--M8J4M/ 07/25 H@V.lC oDH:/ "
       },
       "type": "n8n-nodes-douyin-dashscope.douyinParse",
       "typeVersion": 1,
@@ -177,8 +177,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        0,
-        48
+        48,
+        56
       ],
       "id": "02a63fc9-580b-4c79-8ff8-0707c2219db2",
       "name": "Read/Write Files from Disk"
@@ -190,22 +190,111 @@
       "type": "n8n-nodes-douyin-dashscope.ffmpegExtractAudio",
       "typeVersion": 1,
       "position": [
-        176,
-        0
+        272,
+        56
       ],
       "id": "d48b4b38-5b3a-4541-a5b8-06f88fbb609e",
       "name": "FFmpeg Extract Audio"
     },
     {
-      "parameters": {},
+      "parameters": {
+        "inputPath": "={{ $json.outputPath }}",
+        "pythonPath": "C:\\python39\\python.exe",
+        "device": "cuda",
+        "language": "zh",
+        "vadFilter": true
+      },
       "type": "n8n-nodes-douyin-dashscope.whisperLocal",
       "typeVersion": 1,
       "position": [
-        384,
-        0
+        496,
+        56
       ],
       "id": "c814b3b8-9897-47e6-a65f-977c8480d2ca",
       "name": "Whisper (Local)"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -40
+      ],
+      "id": "68390cd2-a72c-413c-8125-57ba7083b8cc",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $('FFmpeg Extract Audio').item.json.outputPath.replace(\".mp3\",\".txt\") }}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        -40
+      ],
+      "id": "e4f8cd00-ca85-4ac5-8f9c-4f6ed163b8d3",
+      "name": "Read/Write Files from Disk1"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "segments",
+        "options": {
+          "encoding": "utf8"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        152
+      ],
+      "id": "012cf210-a82a-437d-b685-87443c82fb90",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $('FFmpeg Extract Audio').item.json.outputPath.replace(\".mp3\",\".json\") }}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        152
+      ],
+      "id": "12211435-366c-48a3-aa29-ef15569e043e",
+      "name": "Read/Write Files from Disk2"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"success\":true}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        56
+      ],
+      "id": "0136de02-6ca0-41aa-beb6-ce91822985d6",
+      "name": "Edit Fields"
     }
   ],
   "pinData": {},
@@ -333,6 +422,71 @@
           }
         ]
       ]
+    },
+    "Whisper (Local)": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Failed": {
+      "main": [
+        []
+      ]
+    },
+    "Read/Write Files from Disk1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -340,7 +494,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "ba10300c-2fad-4fd2-a84f-c56ff9ff3923",
+  "versionId": "b74506ab-a92c-4d2a-adf5-c35f9ae64942",
   "meta": {
     "instanceId": "10632c0121cbee6ec79e0c57073a02f9d1ea757f302d57f377c92926266100d5"
   },

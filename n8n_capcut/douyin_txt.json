@@ -1,372 +1,413 @@
 {
-  "name": "Douyin Text Extract (DashScope)",
+  "name": "capcut_http_workflow",
   "nodes": [
     {
-      "parameters": {
-        "path": "douyin/text",
-        "httpMethod": "POST",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "b7b0e2c4-7b3c-4a78-9bba-437335a12b36",
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
       "position": [
-        240,
-        300
-      ]
+        -1744,
+        -16
+      ],
+      "id": "be364653-77ec-4cf1-a2de-9ab9507049de",
+      "name": "When clicking ‘Execute workflow’"
     },
     {
       "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            {
-              "name": "shareText",
-              "value": "={{$json.body?.shareText ?? $json.shareText ?? ''}}"
-            },
-            {
-              "name": "ua",
-              "value": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/121.0.2277.107 Version/17.0 Mobile/15E148 Safari/604.1"
-            }
-          ]
-        },
-        "options": {}
+        "operation": "captureNetwork",
+        "url": "= {{ $json.shortUrl }}",
+        "urlFilter": "=/aweme/v1/web/aweme/detail/.*{{ $json.videoId }}",
+        "resourceTypes": [
+          "application/json"
+        ],
+        "browserOptions": {
+          "headless": false
+        }
       },
-      "id": "c9f09e79-78d1-4a83-9a7c-6a6da3a4297e",
-      "name": "Set Input",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
+      "type": "n8n-nodes-playwright.playwright",
+      "typeVersion": 1,
       "position": [
-        460,
-        300
-      ]
+        -1296,
+        -16
+      ],
+      "id": "006f39dc-8ee8-4921-a760-01d9c4e44ff8",
+      "name": "Playwright"
     },
     {
       "parameters": {
-        "functionCode": "const shareText = $json.shareText || '';\n\n// Extract first URL\nconst urlMatch = shareText.match(/https?:\\/\\/[^\\s]+/i);\nif (!urlMatch) throw new Error('未找到有效的分享链接');\nconst shareUrl = urlMatch[0];\n\n// Try to get video id from common patterns\nlet videoId = null;\ntry {\n  const u = new URL(shareUrl);\n  videoId = u.searchParams.get('modal_id') || u.searchParams.get('video_id');\n} catch (e) {}\n\nif (!videoId) {\n  const m1 = shareUrl.match(/video\\/(\\d+)/i);\n  if (m1) videoId = m1[1];\n}\n\nif (!videoId) throw new Error('无法从链接中提取 video_id/modal_id，请换“分享链接”或把整段分享文案贴进来');\n\nconst iesUrl = `https://www.iesdouyin.com/share/video/${videoId}`;\n\nreturn [{\n  shareUrl,\n  videoId,\n  iesUrl,\n  ua: $json.ua,\n}];"
+        "jsCode": "const urls=[];for(const item of $input.all()){const list=item.json?.records?.[0]?.body?.aweme_detail?.video?.download_addr?.url_list||[];for(const u of list) urls.push(u);}return [{json:{urls}}];"
       },
-      "id": "6c8d15c6-75bb-4a59-88cc-1c0a9ad285ab",
-      "name": "Parse Share Link",
-      "type": "n8n-nodes-base.function",
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        700,
-        300
-      ]
+        -1072,
+        -16
+      ],
+      "id": "08f305bc-42ad-499d-b464-dee53349d66c",
+      "name": "Extract URLs"
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "={{$json.iesUrl}}",
+        "fieldToSplitOut": "urls",
         "options": {
-          "timeout": 60000,
-          "followRedirect": true
-        },
-        "headerParametersUi": {
-          "parameter": [
+          "destinationFieldName": "url"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        -16
+      ],
+      "id": "2e3e7f31-ebe8-44cb-aa8b-2c009fb3f4f8",
+      "name": "Split Out URLs"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -624,
+        -16
+      ],
+      "id": "86cc4d55-8512-45ce-98d0-03ece37dec64",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $binary.data&&($binary.data.mimeType==\"video/mp4\")? 0 : 1 }}",
+        "outputsAmount": 2
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        56
+      ],
+      "id": "6133f723-13ef-493c-8a9f-865e67e15cd8",
+      "name": "Has Binary?"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\"success\":false,\"reason\":\"all urls failed\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -208
+      ],
+      "id": "5eaaf8e7-c294-4cba-989c-e267d0a96d09",
+      "name": "All Failed"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sec-ch-ua-platform",
+              "value": "\"Windows\""
+            },
             {
               "name": "User-Agent",
-              "value": "={{$json.ua}}"
-            }
-          ]
-        }
-      },
-      "id": "0ccff2e2-0c3d-4f1d-aeb1-5b362ac1a7c2",
-      "name": "Fetch IES HTML",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        950,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "const html = $json.body || $json || '';\nconst text = typeof html === 'string' ? html : JSON.stringify(html);\n\nconst m = text.match(/window\\._ROUTER_DATA\\s*=\\s*(.*?)<\\/script>/s);\nif (!m || !m[1]) throw new Error('从HTML中解析视频信息失败');\n\nlet jsonData;\ntry {\n  jsonData = JSON.parse(m[1].trim());\n} catch (e) {\n  throw new Error('ROUTER_DATA JSON 解析失败');\n}\n\nconst VIDEO_ID_PAGE_KEY = 'video_(id)/page';\nconst NOTE_ID_PAGE_KEY = 'note_(id)/page';\n\nlet originalVideoInfo;\nif (jsonData?.loaderData?.[VIDEO_ID_PAGE_KEY]) {\n  originalVideoInfo = jsonData.loaderData[VIDEO_ID_PAGE_KEY].videoInfoRes;\n} else if (jsonData?.loaderData?.[NOTE_ID_PAGE_KEY]) {\n  originalVideoInfo = jsonData.loaderData[NOTE_ID_PAGE_KEY].videoInfoRes;\n} else {\n  throw new Error('无法从JSON中解析视频或图集信息');\n}\n\nconst data = originalVideoInfo?.item_list?.[0];\nif (!data) throw new Error('item_list 为空');\n\nlet downloadUrl = data?.video?.play_addr?.url_list?.[0];\nif (!downloadUrl) throw new Error('无法获取 play_addr.url_list[0]');\n\ndownloadUrl = downloadUrl.replace('playwm', 'play');\n\nlet title = (data?.desc || '').trim();\nif (!title) title = `douyin_${$node['Parse Share Link'].json.videoId}`;\n// replace illegal filename chars\ntitle = title.replace(/[\\\\/:*?\"<>|]/g, '_');\n\nreturn [{\n  videoId: $node['Parse Share Link'].json.videoId,\n  title,\n  downloadUrl,\n}];"
-      },
-      "id": "0c3bf32f-9536-4aa0-9f8a-f6e9e5dcf166",
-      "name": "Extract Download URL",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 2,
-      "position": [
-        1200,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "keepOnlySet": false,
-        "values": {
-          "string": [
-            {
-              "name": "tempDir",
-              "value": "={{$env.N8N_DOUYIN_TMP_DIR ?? 'D:\\\\work\\\\n8n_tmp\\\\douyin'}}"
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0"
             },
             {
-              "name": "ossBucket",
-              "value": "={{$env.OSS_BUCKET ?? ''}}"
+              "name": "sec-ch-ua",
+              "value": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Microsoft Edge\";v=\"144\""
             },
             {
-              "name": "ossEndpoint",
-              "value": "={{$env.OSS_ENDPOINT ?? ''}}"
+              "name": "sec-ch-ua-mobile",
+              "value": "?0"
             },
             {
-              "name": "ossPublicBaseUrl",
-              "value": "={{$env.OSS_PUBLIC_BASEURL ?? ''}}"
-            },
-            {
-              "name": "ossPrefix",
-              "value": "={{$env.OSS_PREFIX ?? 'douyin/'}}"
+              "name": "referer",
+              "value": "={{ $json.url }}"
             }
           ]
         },
-        "options": {}
-      },
-      "id": "5df5a9bb-2b26-4f3a-99a1-1a0e3f4fbcb8",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 2,
-      "position": [
-        1200,
-        520
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "const videoId = $node['Extract Download URL'].json.videoId;\nconst title = $node['Extract Download URL'].json.title;\nconst downloadUrl = $node['Extract Download URL'].json.downloadUrl;\n\nconst tempDir = $json.tempDir;\nif (!tempDir) throw new Error('tempDir 为空');\n\nconst videoPath = `${tempDir}\\\\${videoId}.mp4`;\nconst audioPath = `${tempDir}\\\\${videoId}.mp3`;\n\nconst ossPrefix = ($json.ossPrefix || 'douyin/').replace(/^\\/+/, '').replace(/\\/*$/, '/');\nconst ossVideoKey = `${ossPrefix}videos/${videoId}.mp4`;\nconst ossAudioKey = `${ossPrefix}audios/${videoId}.mp3`;\n\nconst ossPublicBaseUrl = ($json.ossPublicBaseUrl || '').replace(/\\/*$/, '');\nconst ossVideoUrl = ossPublicBaseUrl ? `${ossPublicBaseUrl}/${ossVideoKey}` : '';\nconst ossAudioUrl = ossPublicBaseUrl ? `${ossPublicBaseUrl}/${ossAudioKey}` : '';\n\nreturn [{\n  videoId,\n  title,\n  downloadUrl,\n  tempDir,\n  videoPath,\n  audioPath,\n  ossVideoKey,\n  ossAudioKey,\n  ossVideoUrl,\n  ossAudioUrl,\n  ossBucket: $json.ossBucket,\n  ossEndpoint: $json.ossEndpoint,\n  ossPublicBaseUrl: $json.ossPublicBaseUrl,\n}];"
-      },
-      "id": "3f28011b-1d2e-4e45-9b4b-3af8d3c5d6b0",
-      "name": "Prepare Paths",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 2,
-      "position": [
-        1460,
-        520
-      ]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{$json.downloadUrl}}",
         "options": {
-          "timeout": 600000,
           "response": {
-            "responseFormat": "file"
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "file"
+            }
           }
         }
       },
-      "id": "f8b4ce2b-5b21-4b5a-8a74-0a1d79d8f58a",
-      "name": "Download Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        1710,
-        520
-      ]
+        -400,
+        -16
+      ],
+      "id": "530923f0-a3c6-4094-b2f3-092e008a50b6",
+      "name": "HTTP Request1",
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "fileName": "={{$node['Prepare Paths'].json.videoPath}}",
-        "dataPropertyName": "data",
+        "shareText": "8.25 复制打开抖音，看看【AI硬件情报局的作品】这台国产小机器人众筹卷走两百多万，老外都抢着付钱 ... https://v.douyin.com/ZtNn--M8J4M/ 07/25 H@V.lC oDH:/ "
+      },
+      "type": "n8n-nodes-douyin-dashscope.douyinParse",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        -16
+      ],
+      "id": "e78bb6ce-8855-48eb-99d9-4e24ea1065e8",
+      "name": "Douyin Parse"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{'D:\\\\downloads\\\\douyin_'+$now.toMillis()+'.mp4'}}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        56
+      ],
+      "id": "02a63fc9-580b-4c79-8ff8-0707c2219db2",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "inputPath": "={{$json.fileName}}"
+      },
+      "type": "n8n-nodes-douyin-dashscope.ffmpegExtractAudio",
+      "typeVersion": 1,
+      "position": [
+        272,
+        56
+      ],
+      "id": "d48b4b38-5b3a-4541-a5b8-06f88fbb609e",
+      "name": "FFmpeg Extract Audio"
+    },
+    {
+      "parameters": {
+        "inputPath": "={{ $json.outputPath }}",
+        "pythonPath": "C:\\python39\\python.exe",
+        "device": "cuda",
+        "language": "zh",
+        "vadFilter": true
+      },
+      "type": "n8n-nodes-douyin-dashscope.whisperLocal",
+      "typeVersion": 1,
+      "position": [
+        496,
+        56
+      ],
+      "id": "c814b3b8-9897-47e6-a65f-977c8480d2ca",
+      "name": "Whisper (Local)"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{(()=>{const audioPath=$json.audioPath||'';const base=audioPath?audioPath.replace(/\\.[^\\.]+$/,''):`D:\\\\downloads\\\\whisper_${$now.toMillis()}`;const segments=$json.segments||[];const text=String($json.text||'');return {audioPath,base,txtPath:base+'.txt',timelinePath:base+'_timeline.json',txtBase64:Buffer.from(text,'utf8').toString('base64'),timelineBase64:Buffer.from(JSON.stringify(segments),'utf8').toString('base64')};})()}}",
         "options": {}
       },
-      "id": "f0de42b1-7a29-4c68-8a1a-8bbf84cc7df3",
-      "name": "Save Video File",
-      "type": "n8n-nodes-base.writeBinaryFile",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        1960,
-        520
-      ]
+        736,
+        56
+      ],
+      "id": "5a7b8c5b-4c8d-4c8a-9f9a-4a6b2c6d4a1d",
+      "name": "Prepare Output Files"
     },
     {
       "parameters": {
-        "command": "cmd",
-        "parameters": "/c ffmpeg -y -i \"{{$node['Prepare Paths'].json.videoPath}}\" -vn -acodec libmp3lame -q:a 2 \"{{$node['Prepare Paths'].json.audioPath}}\""
-      },
-      "id": "70c6d0b5-7a46-4c4f-9f28-0c96d52d07b0",
-      "name": "FFmpeg Extract Audio",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
-      "position": [
-        2210,
-        520
-      ]
-    },
-    {
-      "parameters": {
-        "command": "cmd",
-        "parameters": "/c ossutil cp -f \"{{$node['Prepare Paths'].json.videoPath}}\" \"oss://{{$node['Prepare Paths'].json.ossBucket}}/{{$node['Prepare Paths'].json.ossVideoKey}}\" -e {{$node['Prepare Paths'].json.ossEndpoint}}"
-      },
-      "id": "dfd8b004-1da2-4b7f-8443-0863df4a5b15",
-      "name": "Upload Video to OSS (ossutil)",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
-      "position": [
-        2710,
-        420
-      ]
-    },
-    {
-      "parameters": {
-        "command": "cmd",
-        "parameters": "/c ossutil cp -f \"{{$node['Prepare Paths'].json.audioPath}}\" \"oss://{{$node['Prepare Paths'].json.ossBucket}}/{{$node['Prepare Paths'].json.ossAudioKey}}\" -e {{$node['Prepare Paths'].json.ossEndpoint}}"
-      },
-      "id": "07bfe0b3-0b4e-4d67-9f27-4b1c3b2b2f3c",
-      "name": "Upload Audio to OSS (ossutil)",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
-      "position": [
-        2710,
-        620
-      ]
-    },
-    {
-      "parameters": {
-        "command": "python",
-        "parameters": "-c \"import os, json, dashscope; from http import HTTPStatus; from urllib import request;\napi_key=os.getenv('DASHSCOPE_API_KEY');\nif not api_key: raise SystemExit('Missing env DASHSCOPE_API_KEY');\ndashscope.api_key=api_key;\nvideo_url=os.environ.get('N8N_VIDEO_URL');\nmodel=os.environ.get('DASHSCOPE_ASR_MODEL','paraformer-v2');\nresp=dashscope.audio.asr.Transcription.async_call(model=model,file_urls=[video_url],language_hints=['zh','en']);\nwait=dashscope.audio.asr.Transcription.wait(task=resp.output.task_id);\nif wait.status_code!=HTTPStatus.OK: raise SystemExit(wait.output.message);\nout_text='';\nfor r in wait.output.get('results',[]):\n  url=r.get('transcription_url');\n  if not url: continue;\n  result=json.loads(request.urlopen(url).read().decode('utf8'));\n  ts=result.get('transcripts') or [];\n  if ts: out_text=ts[0].get('text','');\nprint(json.dumps({'text': out_text}, ensure_ascii=False))\"",
+        "operation": "toBinary",
+        "sourceProperty": "timelineBase64",
+        "binaryPropertyName": "data",
         "options": {
-          "environmentVariables": {
-            "values": [
-              {
-                "name": "N8N_VIDEO_URL",
-                "value": "={{$node['Prepare Paths'].json.ossAudioUrl || $node['Prepare Paths'].json.downloadUrl}}"
-              }
-            ]
-          }
+          "dataIsBase64": true,
+          "fileName": "timeline.json",
+          "mimeType": "application/json"
         }
       },
-      "id": "f3c0f7c3-5a1d-4a4e-b15f-6ef0e9f5b2d4",
-      "name": "DashScope ASR (Python)",
-      "type": "n8n-nodes-base.executeCommand",
+      "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1,
       "position": [
-        2960,
-        520
-      ]
+        960,
+        56
+      ],
+      "id": "6c6e3b12-2b4b-4ef1-bd2b-0a3d3a2d5c77",
+      "name": "Convert Timeline to File"
     },
     {
       "parameters": {
-        "functionCode": "// Parse stdout JSON from Execute Command\nconst stdout = $json.stdout || '';\nlet asr;\ntry {\n  asr = JSON.parse(stdout.trim() || '{}');\n} catch (e) {\n  asr = { text: stdout };\n}\n\nconst paths = $node['Prepare Paths'].json;\n\nreturn [{\n  videoId: $node['Extract Download URL'].json.videoId,\n  title: $node['Extract Download URL'].json.title,\n  downloadUrl: $node['Extract Download URL'].json.downloadUrl,\n  ossVideoKey: paths.ossVideoKey,\n  ossAudioKey: paths.ossAudioKey,\n  ossVideoUrl: paths.ossVideoUrl,\n  ossAudioUrl: paths.ossAudioUrl,\n  text: asr.text || ''\n}];"
-      },
-      "id": "a55a3a9a-5ad3-4d03-9c4e-8f8f5e0bda79",
-      "name": "Build Response",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 2,
-      "position": [
-        1710,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "responseBody": "={{$json}}",
+        "operation": "write",
+        "fileName": "={{$node[\"Prepare Output Files\"].json.timelinePath}}",
         "options": {
-          "responseCode": 200
+          "append": false
         }
       },
-      "id": "f0e5d1b2-6b3e-4f4c-a5a9-2fbdd57c2f52",
-      "name": "Respond",
-      "type": "n8n-nodes-base.respondToWebhook",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        56
+      ],
+      "id": "3c0e0f2a-77b5-4e8d-a3a2-1a8d5b2ad3cc",
+      "name": "Write timeline.json"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "txtBase64",
+        "binaryPropertyName": "data",
+        "options": {
+          "dataIsBase64": true,
+          "fileName": "transcript.txt",
+          "mimeType": "text/plain"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1,
       "position": [
-        1960,
-        300
-      ]
+        960,
+        224
+      ],
+      "id": "8f4c0c5f-58b6-4c8a-8b37-9ad2c3c5b8aa",
+      "name": "Convert Text to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{$node[\"Prepare Output Files\"].json.txtPath}}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        224
+      ],
+      "id": "a0d1c2b3-4e5f-46a7-9b8c-0d1e2f3a4b5c",
+      "name": "Write transcript.txt"
     }
   ],
+  "pinData": {},
   "connections": {
-    "Webhook": {
+    "When clicking ‘Execute workflow’": {
       "main": [
         [
           {
-            "node": "Set Input",
+            "node": "Douyin Parse",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Set Input": {
+    "Playwright": {
       "main": [
         [
           {
-            "node": "Parse Share Link",
+            "node": "Extract URLs",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse Share Link": {
+    "Extract URLs": {
       "main": [
         [
           {
-            "node": "Fetch IES HTML",
+            "node": "Split Out URLs",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch IES HTML": {
+    "Split Out URLs": {
       "main": [
         [
           {
-            "node": "Extract Download URL",
+            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract Download URL": {
+    "Loop Over Items": {
       "main": [
         [
           {
-            "node": "Set Config",
+            "node": "All Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Set Config": {
+    "Has Binary?": {
       "main": [
         [
           {
-            "node": "Prepare Paths",
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Paths": {
+    "HTTP Request1": {
       "main": [
         [
           {
-            "node": "Download Video",
+            "node": "Has Binary?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Download Video": {
+    "Douyin Parse": {
       "main": [
         [
           {
-            "node": "Save Video File",
+            "node": "Playwright",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Save Video File": {
+    "Read/Write Files from Disk": {
       "main": [
         [
           {
@@ -381,51 +422,56 @@
       "main": [
         [
           {
-            "node": "Upload Video to OSS (ossutil)",
+            "node": "Whisper (Local)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upload Video to OSS (ossutil)": {
+    "Whisper (Local)": {
       "main": [
         [
           {
-            "node": "Upload Audio to OSS (ossutil)",
+            "node": "Prepare Output Files",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upload Audio to OSS (ossutil)": {
+    "Prepare Output Files": {
       "main": [
         [
           {
-            "node": "DashScope ASR (Python)",
+            "node": "Convert Timeline to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert Text to File",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "DashScope ASR (Python)": {
+    "Convert Timeline to File": {
       "main": [
         [
           {
-            "node": "Build Response",
+            "node": "Write timeline.json",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Response": {
+    "Convert Text to File": {
       "main": [
         [
           {
-            "node": "Respond",
+            "node": "Write transcript.txt",
             "type": "main",
             "index": 0
           }
@@ -434,6 +480,14 @@
     }
   },
   "active": false,
-  "settings": {},
-  "versionId": "1"
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b74506ab-a92c-4d2a-adf5-c35f9ae64942",
+  "meta": {
+    "instanceId": "10632c0121cbee6ec79e0c57073a02f9d1ea757f302d57f377c92926266100d5"
+  },
+  "id": "Zy3KcXkia6l91zeQB49OH",
+  "tags": []
 }

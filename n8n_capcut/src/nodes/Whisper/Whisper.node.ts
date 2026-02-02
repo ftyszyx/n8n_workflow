@@ -243,6 +243,7 @@ export class Whisper implements INodeType {
             detectedLanguage: parsed?.language || undefined,
             languageProbability: parsed?.language_probability ?? undefined,
             segments: parsed?.segments ?? undefined,
+            audioPath: inputPath,
             model,
             device,
             computeType,
