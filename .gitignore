@@ -7,3 +7,4 @@ n8n_wechat/dist
 n8n-nodes-aliyunoss/dist
 feishu-pages/node_modules
 *.tsbuildinfo
+n8n_bugly/node_modules
